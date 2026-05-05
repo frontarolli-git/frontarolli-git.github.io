@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Mad Libs - Hey Jude</title>
+</head>
+<body>
+
+  <h1>The Beatles - Hey Jude</h1>
+
+  <p>
+    hey, 
+    <input type="text" placeholder="nome" oninput="atualizar()">,
+    dont make it 
+    <input type="text" placeholder="adjetivo" oninput="atualizar()">
+    <br><br>
+
+    take a 
+    <input type="text" placeholder="sentimento" oninput="atualizar()"> 
+    song and make it 
+    <input type="text" placeholder="adjetivo" oninput="atualizar()">
+    <br><br>
+
+    remember to let 
+    <input type="text" placeholder="pronome" oninput="atualizar()"> 
+    into your 
+    <input type="text" placeholder="parte do corpo" oninput="atualizar()">
+    <br><br>
+
+    then you can start to make it 
+    <input type="text" placeholder="adjetivo" oninput="atualizar()">
+    <br><br>
+
+  <h2>Resultado:</h2>
+  <p id="resultado"></p>
+
+  <script>
+    function atualizar() {
+      const inputs = document.querySelectorAll("input");
+      const valores = Array.from(inputs).map(i => i.value || "_____");
+
+      const texto = `
+Hey, ${valores[0]}, don't make it ${valores[1]}
+Take a ${valores[2]} song and make it ${valores[3]}
+
+Remember to let ${valores[4]} into your ${valores[5]}
+Then you can start to make it ${valores[6]}
+
+      `;
+
+      document.getElementById("resultado").innerText = texto;
+    }
+  </script>
+</body>
+</html>
