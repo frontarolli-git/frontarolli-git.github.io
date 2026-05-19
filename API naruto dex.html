@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Naruto Dex</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #0f0f0f; color: #fff; padding: 20px; min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 24px; color: #FF6B00; font-size: 2.5rem; }
+    h1 span { color: #FFD700; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 30px; }
+    input { flex: 1; padding: 14px; border: 2px solid #333; background: #1a1a1a; color: #fff; border-radius: 8px; font-size: 16px; outline: none; }
+    input:focus { border-color: #FF6B00; }
+    button { padding: 14px 24px; background: #FF6B00; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+    button:hover { background: #FF8C00; }
+    .loading { text-align: center; padding: 40px; font-size: 18px; color: #FF6B00; }
+    .error { background: #ff3333; padding: 16px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+    .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; overflow: hidden; transition: 0.3s; cursor: pointer; }
+    .card:hover { transform: translateY(-5px); border-color: #FF6B00; }
+    .card img { width: 100%; height: 300px; object-fit: cover; background: #0f0f0f; }
+    .card-info { padding: 16px; }
+    .card h3 { color: #FF6B00; margin-bottom: 8px; font-size: 1.3rem; }
+    .card p { color: #aaa; font-size: 14px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 20px; overflow-y: auto; }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: #1a1a1a; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
+    .modal-close { position: absolute; top: 16px; right: 16px; background: #ff3333; border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 20px; z-index: 10; }
+    .modal-header img { width: 100%; height: 400px; object-fit: cover; }
+    .modal-body { padding: 24px; }
+    .modal-body h2 { color: #FF6B00; margin-bottom: 16px; font-size: 2rem; }
+    .modal-body h4 { color: #FFD700; margin: 16px 0 8px; }
+    .modal-body p { color: #ccc; line-height: 1.6; margin-bottom: 12px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .tag { background: #FF6B00; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Naruto <span>Dex</span></h1>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Digite o nome: Naruto, Sasuke, Itachi...">
+      <button id="searchBtn">Buscar</button>
+    </div>
+    <div id="error" class="error" style="display: none;"></div>
+    <div id="loading" class="loading" style="display: none;">Buscando...</div>
+    <div id="results" class="results"></div>
+  </div>
+
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeModal">×</button>
+      <div id="modalData"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://dattebayo-api.onrender.com/characters';
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsDiv = document.getElementById('results');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const modal = document.getElementById('modal');
+    const modalData = document.getElementById('modalData');
+    const closeModal = document.getElementById('closeModal');
+    
+    let allCharacters = [];
+    
+    async function loadAllCharacters() {
+      try {
+        loadingDiv.style.display = 'block';
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('API fora do ar');
+        const data = await res.json();
+        allCharacters = data.characters; // Dattebayo retorna dentro de .characters
+        loadingDiv.style.display = 'none';
+        showCharacters(allCharacters.slice(0, 20));
+      } catch (err) {
+        showError('Erro ao carregar API. Tenta de novo mais tarde.');
+        loadingDiv.style.display = 'none';
+        console.error(err);
+      }
+    }
+    
+    function showError(msg) {
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+      setTimeout(() => errorDiv.style.display = 'none', 4000);
+    }
+    
+    function showCharacters(chars) {
+      resultsDiv.innerHTML = '';
+      if (chars.length === 0) {
+        resultsDiv.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#aaa;">Nenhum personagem encontrado</p>';
+        return;
+      }
+      
+      chars.forEach(char => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${char.images?.[0] || 'https://via.placeholder.com/300x300?text=Sem+Foto'}" alt="${char.name}" onerror="this.src='https://via.placeholder.com/300x300?text=Sem+Foto'">
+          <div class="card-info">
+            <h3>${char.name}</h3>
+            <p>${char.about?.[0] || 'Sem descrição disponível'}</p>
+          </div>
+        `;
+        card.onclick = () => openModal(char);
+        resultsDiv.appendChild(card);
+      });
+    }
+    
+    function searchCharacters() {
+      const query = searchInput.value.toLowerCase().trim();
+      if (!query) {
+        showCharacters(allCharacters.slice(0, 20));
+        return;
+      }
+      const filtered = allCharacters.filter(char => 
+        char.name.toLowerCase().includes(query)
+      );
+      showCharacters(filtered);
+    }
+    
+    function openModal(char) {
+      modalData.innerHTML = `
+        <div class="modal-header">
+          <img src="${char.images?.[0] || 'https://via.placeholder.com/700x400?text=Sem+Foto'}" alt="${char.name}">
+        </div>
+        <div class="modal-body">
+          <h2>${char.name}</h2>
+          <p>${char.about?.join('<br><br>') || 'Sem descrição disponível'}</p>
+          
+          ${char.personal?.clan ? `<h4>Clã</h4><p>${char.personal.clan}</p>` : ''}
+          ${char.personal?.affiliation ? `<h4>Afiliação</h4><p>${char.personal.affiliation.join(', ')}</p>` : ''}
+          
+          ${char.jutsu?.length ? `
+            <h4>Jutsus</h4>
+            <div class="tags">
+              ${char.jutsu.slice(0, 15).map(j => `<span class="tag">${j}</span>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+      modal.classList.add('active');
+    }
+    
+    searchBtn.onclick = searchCharacters;
+    searchInput.onkeyup = (e) => e.key === 'Enter' && searchCharacters();
+    closeModal.onclick = () => modal.classList.remove('active');
+    modal.onclick = (e) => e.target === modal && modal.classList.remove('active');
+    
+    loadAllCharacters();
+  </script>
+</body>
+</html>
