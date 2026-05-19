@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Busca de Animes</title>
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1{
+      color: #ff4d6d;
+    }
+
+    input{
+      padding: 10px;
+      width: 250px;
+      border: none;
+      border-radius: 8px;
+      margin-right: 10px;
+    }
+
+    button{
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #ff4d6d;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover{
+      background: #ff1f4b;
+    }
+
+    #resultado{
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .card{
+      background: #222;
+      padding: 20px;
+      border-radius: 15px;
+      width: 300px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    img{
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    p{
+      text-align: justify;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Busca de Animes</h1>
+
+  <input type="text" id="anime" placeholder="Digite um anime">
+  <button onclick="buscarAnime()">Buscar</button>
+
+  <div id="resultado"></div>
+
+  <script>
+
+    async function buscarAnime(){
+
+      const nomeAnime = document.getElementById("anime").value;
+
+      const url = `https://api.jikan.moe/v4/anime?q=${nomeAnime}&limit=1`;
+
+      const resposta = await fetch(url);
+
+      const dados = await resposta.json();
+
+      const anime = dados.data[0];
+
+      document.getElementById("resultado").innerHTML = `
+
+        <div class="card">
+
+          <img src="${anime.images.jpg.image_url}">
+
+          <h2>${anime.title}</h2>
+
+          <h3>⭐ Nota: ${anime.score}</h3>
+
+          <p>${anime.synopsis}</p>
+
+        </div>
+
+      `;
+    }
+
+  </script>
+
+</body>
+</html>
